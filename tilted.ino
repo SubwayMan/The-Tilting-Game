@@ -42,8 +42,12 @@ void setup() {
   mpu6050.calcGyroOffsets(true);
 }
 
-void setPos() {
+void setPos(int nrow, int ncol) {
   // Used for instantaneously updating player position
+  playerRow = nrow;
+  playerCol = ncol;
+  posX = playerRow*125-63, posY = playerCol*125-63;
+
 }
 
 void loop() {
@@ -59,6 +63,10 @@ void loop() {
     posY = constrain(posY + rotY / 90.0 * 125, 0, 999);
     playerRow = posY / 125;
     playerCol = posX / 125;
+
+    if (display[playerRow][playerCol]) {
+      setPos(6, 7);
+    }
 
     /*
     char s[50];
