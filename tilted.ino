@@ -12,6 +12,8 @@ int display[8][8] = {
   { 1, 1, 1, 1, 1, 1, 1, 1 }
 };
 
+int greenMask[8] = {0, 0, 15, 32, 0, 0, 0, 0};
+
 MPU6050 mpu6050(Wire);
 
 const int clockPin = 12, dataPin = 11, latchPin = 10;
@@ -22,20 +24,22 @@ int ticks = 0;
 int playerRow = 6, playerCol = 7;
 int posX = playerRow*125-60, posY = playerCol*125-60;
 
-void sendBits(int data) {
+void sendBits(int red_data, int green_data) {
   // helper function that makes it simple to set the contents of the shift register
   digitalWrite(latchPin, LOW);
-  shiftOut(dataPin, clockPin, MSBFIRST, data);
+  //shiftOut(dataPin, clockPin, MSBFIRST, (green_data<<8)|red_data);
+  shiftOut(dataPin, clockPin, MSBFIRST, green_data);
+  shiftOut(dataPin, clockPin, MSBFIRST, red_data);
   digitalWrite(latchPin, HIGH);
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); 
   // pins 2-9 row headers, pins 10-12 for shift register
   for (int i = 2; i <= 12; ++i)
     pinMode(i, OUTPUT);
 
-  sendBits(0);
+  sendBits(0, 255);
   for (int i = 2; i <= 9; ++i) digitalWrite(i, HIGH);
   Wire.begin();
   mpu6050.begin();
@@ -68,21 +72,13 @@ void loop() {
       setPos(6, 7);
     }
 
-    /*
-    char s[50];
-    sprintf(s, "posx: %d, posy: %d, row: %d, col: %d", posX, posY, playerRow, playerCol);
-    Serial.println(s);
-    Serial.print("angleX : ");Serial.print(mpu6050.getAngleX());
-    Serial.print("\tangleY : ");Serial.println(mpu6050.getAngleY());
-    Serial.println();
-    */
   }
 
   for (int r = 0; r < 8; ++r) {
     int reg = 0;
     for (int c = 0; c < 8; ++c) reg |= ((display[r][c]^1) << c);
     if (r == playerRow) reg &= 255 - (1<<playerCol);
-    sendBits(reg);
+    sendBits(reg, greenMask[r]^0b11111111);
     digitalWrite(r + 2, HIGH);
     delay(1);
     digitalWrite(r + 2, LOW);
