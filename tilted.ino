@@ -44,8 +44,23 @@ void setPos(int nrow, int ncol) {
 struct Level {
   int startRow, startCol;
   int exitRow, exitCol;
+  int redMask[8];
+  int greenMask[8];
 
+  Level(int startRow, int startCol, int exitRow, int exitCol, int *mask1, int *mask2) {
+    this->startRow = startRow;
+    this->startCol = startCol;
+    this->exitRow = exitRow;
+    this->exitCol = exitCol;
+    for (int i=0; i<8; ++i) {
+      this->redMask[i] = *(mask1+i);
+      this->greenMask[i] = *(mask2+i);
+    }
+    setPos(startRow, startCol);
+  }
 };
+
+Level c_level(6, 7, 1, 1, redMask, greenMask);
 
 void setup() {
   Serial.begin(9600); 
@@ -53,7 +68,7 @@ void setup() {
   for (int i = 2; i <= 12; ++i)
     pinMode(i, OUTPUT);
 
-  sendBits(0, 255);
+  sendBits(255, 255);
   for (int i = 2; i <= 9; ++i) digitalWrite(i, HIGH);
   Wire.begin();
   mpu6050.begin();
@@ -75,16 +90,18 @@ void loop() {
     playerCol = posX / 125;
 
     if (redMask[playerRow]&(1<<playerCol)) {
-      setPos(6, 7);
+      setPos(c_level.startRow, c_level.startCol);
     }
 
   }
 
   // reset the green bitmask
-  memset(greenMask, 0, sizeof(greenMask));
+  for (int i=0; i<8; ++i) greenMask[i] = c_level.greenMask[i];
   for (int r = 0; r < 8; ++r) {
     if (r == playerRow) greenMask[r] |= 1<<playerCol; 
-    sendBits(redMask[r]^255, greenMask[r]^255); // reverse green bitmask, since 0 is ON
+    if (r == c_level.exitRow && (ticks/80)%2 == 0) greenMask[r] |= 1 << c_level.exitCol;
+    
+    sendBits(c_level.redMask[r]^255, greenMask[r]^255); // reverse bitmask, since 0 is ON
     digitalWrite(r + 2, HIGH);
     delay(1);
     digitalWrite(r + 2, LOW);
