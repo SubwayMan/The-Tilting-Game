@@ -1,6 +1,17 @@
 #include <MPU6050_tockn.h>
 #include <Wire.h>
 
+int victoryScreen[8] = {
+  0b00011100,
+  0b00100100,
+  0b10111110,
+  0b11111110,
+  0b11111110,
+  0b10111110,
+  0b00100100,
+  0b00011100
+};
+
 int redMask[8] = {
   0b11111111,
   0b10000000,
@@ -60,7 +71,8 @@ struct Level {
   }
 };
 
-Level c_level(6, 7, 1, 1, redMask, greenMask);
+Level cLevel(6, 7, 1, 1, redMask, greenMask);
+bool victoryFlag = false;
 
 void setup() {
   Serial.begin(9600); 
@@ -76,6 +88,8 @@ void setup() {
 }
 
 void loop() {
+  // tick rate, 8ms for display refresh
+  ticks += 8;
   // receive sensor input
   mpu6050.update();
   // read input only every 100 ticks
@@ -90,24 +104,36 @@ void loop() {
     playerCol = posX / 125;
 
     if (redMask[playerRow]&(1<<playerCol)) {
-      setPos(c_level.startRow, c_level.startCol);
+      setPos(cLevel.startRow, cLevel.startCol);
     }
 
   }
 
+  // victory screen
+  if (victoryFlag) {
+    for (int r=0; r<8; ++r) {
+      sendBits(victoryScreen[r], victoryScreen[r]^255);
+      digitalWrite(r + 2, HIGH);
+      delay(1);
+      digitalWrite(r + 2, LOW);
+    }
+    return;
+  }
+
   // reset the green bitmask
-  for (int i=0; i<8; ++i) greenMask[i] = c_level.greenMask[i];
+  for (int i=0; i<8; ++i) greenMask[i] = cLevel.greenMask[i];
   for (int r = 0; r < 8; ++r) {
     if (r == playerRow) greenMask[r] |= 1<<playerCol; 
-    if (r == c_level.exitRow && (ticks/80)%2 == 0) greenMask[r] |= 1 << c_level.exitCol;
+    if (r == cLevel.exitRow && (ticks/80)%2 == 0) greenMask[r] |= 1 << cLevel.exitCol;
     
-    sendBits(c_level.redMask[r]^255, greenMask[r]^255); // reverse bitmask, since 0 is ON
+    sendBits(cLevel.redMask[r]^255, greenMask[r]^255); // reverse bitmask, since 0 is ON
     digitalWrite(r + 2, HIGH);
     delay(1);
     digitalWrite(r + 2, LOW);
   }
+  if (playerRow == cLevel.exitRow && playerCol == cLevel.exitCol) {
+    victoryFlag=true;
+  }
 
 
-  // tick rate, 8ms for display refresh
-  ticks += 8;
 }
