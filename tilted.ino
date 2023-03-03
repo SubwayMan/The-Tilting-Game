@@ -3,8 +3,8 @@
 
 uint64_t test = 0b1111111011111111111111111000111111111111111110000111111111111111LL;
 
-int nLevels = 3;
-int levelData[3][8] = {
+int nLevels = 4;
+int levelData[4][8] = {
   {
     0b11111111,
     0b10000000,
@@ -13,6 +13,16 @@ int levelData[3][8] = {
     0b10001111,
     0b10000000,
     0b10000000,
+    0b11111111
+  },
+  {
+    0b11111111,
+    0b10000000,
+    0b10001000,
+    0b10001000,
+    0b11001111,
+    0b10000000,
+    0b10010000,
     0b11111111
   },
   {
@@ -74,10 +84,11 @@ struct Level {
   }
 };
 
-Level levels[3] = {
+Level levels[4] = {
   Level(5, 1, 1, 1, levelData[0]),
-  Level(5, 6, 1, 1, levelData[1]),
-  Level(1, 6, 3, 3, levelData[2])
+  Level(5, 0, 3, 1, levelData[1]),
+  Level(5, 6, 1, 1, levelData[2]),
+  Level(1, 6, 3, 3, levelData[3])
 };
 
 int cLevel = 0;
