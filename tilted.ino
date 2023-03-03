@@ -55,6 +55,9 @@ float accX, accY, accZ;
 float rotX, rotY, rotZ;
 int ticks = 0;
 
+//death mark
+int ldRow=-1, ldCol=-1;
+
 struct Level {
   int startRow, startCol;
   int exitRow, exitCol;
@@ -151,6 +154,8 @@ void loop() {
     playerCol = posX / 125;
 
     if (levels[cLevel].levelData[playerRow]&(1<<playerCol)) {
+      ldRow = playerRow;
+      ldCol = playerCol;
       setPos(levels[cLevel].startRow, levels[cLevel].startCol);
     }
 
@@ -169,6 +174,7 @@ void loop() {
     int green=0;    
     if (r == playerRow) green |= 1<<playerCol; 
     if (r == levels[cLevel].exitRow && (ticks/80)%2 == 0) green |= 1 << levels[cLevel].exitCol;
+    if (r == ldRow) green |= 1 << ldCol;
     
     sendBits(levels[cLevel].levelData[r]^255, green^255); // reverse bitmask, since 0 is ON
     digitalWrite(r + 2, HIGH);
@@ -177,6 +183,8 @@ void loop() {
   }
   if (playerRow == levels[cLevel].exitRow && playerCol == levels[cLevel].exitCol) {
     cLevel++;
+    ldRow=-1;
+    ldCol=-1;
     if (cLevel < (sizeof(levels)/sizeof(levels[0])))
       setPos(levels[cLevel].startRow, levels[cLevel].startCol);
   }
