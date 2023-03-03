@@ -1,6 +1,42 @@
 #include <MPU6050_tockn.h>
 #include <Wire.h>
 
+uint64_t test = 0b1111111011111111111111111000111111111111111110000111111111111111LL;
+
+int nLevels = 3;
+int levelData[3][8] = {
+  {
+    0b11111111,
+    0b10000000,
+    0b10000000,
+    0b10000000,
+    0b10001111,
+    0b10000000,
+    0b10000000,
+    0b11111111
+  },
+  {
+    0b11111111,
+    0b10000001,
+    0b10111111,
+    0b10000001,
+    0b11111101,
+    0b10100001,
+    0b10001001,
+    0b11111111
+  },
+  {
+    0b11111111,
+    0b10100011,
+    0b10001001,
+    0b11110101,
+    0b10000101,
+    0b10111101,
+    0b10000001,
+    0b11111111
+  }
+};
+
 int victoryScreen[8] = {
   0b00011100,
   0b00100100,
@@ -11,19 +47,6 @@ int victoryScreen[8] = {
   0b00100100,
   0b00011100
 };
-
-int redMask[8] = {
-  0b11111111,
-  0b10000000,
-  0b10000000,
-  0b10000000,
-  0b10001111,
-  0b10000000,
-  0b10000000,
-  0b11111111
-};
-
-int greenMask[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 MPU6050 mpu6050(Wire);
 
@@ -48,30 +71,32 @@ void setPos(int nrow, int ncol) {
   // Used for instantaneously updating player position
   playerRow = nrow;
   playerCol = ncol;
-  posX = playerRow*125-63, posY = playerCol*125-63;
+  posY = playerRow*125-63, posX = playerCol*125-63;
 
 }
 
 struct Level {
   int startRow, startCol;
   int exitRow, exitCol;
-  int redMask[8];
-  int greenMask[8];
+  int levelData[8];
 
-  Level(int startRow, int startCol, int exitRow, int exitCol, int *mask1, int *mask2) {
+  Level(int startRow, int startCol, int exitRow, int exitCol, int *mask) {
     this->startRow = startRow;
     this->startCol = startCol;
     this->exitRow = exitRow;
     this->exitCol = exitCol;
     for (int i=0; i<8; ++i) {
-      this->redMask[i] = *(mask1+i);
-      this->greenMask[i] = *(mask2+i);
+      this->levelData[i] = *(mask+i);
     }
-    setPos(startRow, startCol);
   }
 };
 
-Level cLevel(6, 7, 1, 1, redMask, greenMask);
+Level levels[3] = {
+  Level(6, 7, 1, 1, levelData[0]),
+  Level(6, 7, 1, 1, levelData[1]),
+  Level(6, 7, 1, 1, levelData[2])
+};
+Level cLevel(6, 6, 1, 1, levelData[0]);
 bool victoryFlag = false;
 
 void setup() {
@@ -80,11 +105,19 @@ void setup() {
   for (int i = 2; i <= 12; ++i)
     pinMode(i, OUTPUT);
 
-  sendBits(255, 255);
+  sendBits(0, 0);
   for (int i = 2; i <= 9; ++i) digitalWrite(i, HIGH);
   Wire.begin();
   mpu6050.begin();
   mpu6050.calcGyroOffsets(true);
+
+  while (test) {
+    Serial.print((int)test&1);
+    test >>= 1;
+  }
+  Serial.println();
+
+  setPos(cLevel.startRow, cLevel.startCol);
 }
 
 void loop() {
@@ -103,8 +136,15 @@ void loop() {
     playerRow = posY / 125;
     playerCol = posX / 125;
 
-    if (redMask[playerRow]&(1<<playerCol)) {
+    if (cLevel.levelData[playerRow]&(1<<playerCol)) {
       setPos(cLevel.startRow, cLevel.startCol);
+    }
+
+    if (ticks % 400 == 0) {
+      Serial.print("x rotation "); Serial.print(rotX);
+      Serial.print(" y rotation "); Serial.println(rotY);    
+      char s[50]; sprintf(s, "xpos: %d, ypos: %d", (int)posX, (int)posY);
+      Serial.println(s);
     }
 
   }
@@ -121,12 +161,12 @@ void loop() {
   }
 
   // reset the green bitmask
-  for (int i=0; i<8; ++i) greenMask[i] = cLevel.greenMask[i];
   for (int r = 0; r < 8; ++r) {
-    if (r == playerRow) greenMask[r] |= 1<<playerCol; 
-    if (r == cLevel.exitRow && (ticks/80)%2 == 0) greenMask[r] |= 1 << cLevel.exitCol;
+    int green=0;    
+    if (r == playerRow) green |= 1<<playerCol; 
+    if (r == cLevel.exitRow && (ticks/80)%2 == 0) green |= 1 << cLevel.exitCol;
     
-    sendBits(cLevel.redMask[r]^255, greenMask[r]^255); // reverse bitmask, since 0 is ON
+    sendBits(cLevel.levelData[r]^255, green^255); // reverse bitmask, since 0 is ON
     digitalWrite(r + 2, HIGH);
     delay(1);
     digitalWrite(r + 2, LOW);
