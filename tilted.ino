@@ -21,8 +21,8 @@ int levelData[3][8] = {
     0b10111111,
     0b10000001,
     0b11111101,
-    0b10100001,
-    0b10001001,
+    0b10000001,
+    0b10000001,
     0b11111111
   },
   {
@@ -55,26 +55,6 @@ float accX, accY, accZ;
 float rotX, rotY, rotZ;
 int ticks = 0;
 
-int playerRow = 6, playerCol = 7;
-int posX = playerRow*125-60, posY = playerCol*125-60;
-
-void sendBits(int red_data, int green_data) {
-  // helper function that makes it simple to set the contents of the shift register
-  digitalWrite(latchPin, LOW);
-  //shiftOut(dataPin, clockPin, MSBFIRST, (green_data<<8)|red_data);
-  shiftOut(dataPin, clockPin, MSBFIRST, green_data);
-  shiftOut(dataPin, clockPin, MSBFIRST, red_data);
-  digitalWrite(latchPin, HIGH);
-}
-
-void setPos(int nrow, int ncol) {
-  // Used for instantaneously updating player position
-  playerRow = nrow;
-  playerCol = ncol;
-  posY = playerRow*125-63, posX = playerCol*125-63;
-
-}
-
 struct Level {
   int startRow, startCol;
   int exitRow, exitCol;
@@ -92,12 +72,34 @@ struct Level {
 };
 
 Level levels[3] = {
-  Level(6, 7, 1, 1, levelData[0]),
-  Level(6, 7, 1, 1, levelData[1]),
-  Level(6, 7, 1, 1, levelData[2])
+  Level(5, 1, 1, 1, levelData[0]),
+  Level(5, 6, 1, 1, levelData[1]),
+  Level(1, 6, 3, 3, levelData[2])
 };
-Level cLevel(6, 6, 1, 1, levelData[0]);
-bool victoryFlag = false;
+
+int cLevel = 0;
+
+int playerRow = levels[0].startRow, playerCol = levels[0].startCol;
+int posX = playerRow*125+60, posY = playerCol*125+60;
+
+void sendBits(int red_data, int green_data) {
+  // helper function that makes it simple to set the contents of the shift register
+  digitalWrite(latchPin, LOW);
+  //shiftOut(dataPin, clockPin, MSBFIRST, (green_data<<8)|red_data);
+  shiftOut(dataPin, clockPin, MSBFIRST, green_data);
+  shiftOut(dataPin, clockPin, MSBFIRST, red_data);
+  digitalWrite(latchPin, HIGH);
+}
+
+void setPos(int nrow, int ncol) {
+  // Used for instantaneously updating player position
+  playerRow = nrow;
+  playerCol = ncol;
+  posY = playerRow*125+63, posX = playerCol*125+63;
+
+}
+
+
 
 void setup() {
   Serial.begin(9600); 
@@ -117,10 +119,22 @@ void setup() {
   }
   Serial.println();
 
-  setPos(cLevel.startRow, cLevel.startCol);
+  setPos(levels[cLevel].startRow, levels[cLevel].startCol);
 }
 
 void loop() {
+
+  // victory check
+  if (cLevel == nLevels) {
+    for (int r=0; r<8; ++r) {
+      sendBits(victoryScreen[r], victoryScreen[r]^255);
+      digitalWrite(r + 2, HIGH);
+      delay(1);
+      digitalWrite(r + 2, LOW);
+    }
+    return;
+  }
+
   // tick rate, 8ms for display refresh
   ticks += 8;
   // receive sensor input
@@ -136,8 +150,8 @@ void loop() {
     playerRow = posY / 125;
     playerCol = posX / 125;
 
-    if (cLevel.levelData[playerRow]&(1<<playerCol)) {
-      setPos(cLevel.startRow, cLevel.startCol);
+    if (levels[cLevel].levelData[playerRow]&(1<<playerCol)) {
+      setPos(levels[cLevel].startRow, levels[cLevel].startCol);
     }
 
     if (ticks % 400 == 0) {
@@ -149,30 +163,22 @@ void loop() {
 
   }
 
-  // victory screen
-  if (victoryFlag) {
-    for (int r=0; r<8; ++r) {
-      sendBits(victoryScreen[r], victoryScreen[r]^255);
-      digitalWrite(r + 2, HIGH);
-      delay(1);
-      digitalWrite(r + 2, LOW);
-    }
-    return;
-  }
 
   // reset the green bitmask
   for (int r = 0; r < 8; ++r) {
     int green=0;    
     if (r == playerRow) green |= 1<<playerCol; 
-    if (r == cLevel.exitRow && (ticks/80)%2 == 0) green |= 1 << cLevel.exitCol;
+    if (r == levels[cLevel].exitRow && (ticks/80)%2 == 0) green |= 1 << levels[cLevel].exitCol;
     
-    sendBits(cLevel.levelData[r]^255, green^255); // reverse bitmask, since 0 is ON
+    sendBits(levels[cLevel].levelData[r]^255, green^255); // reverse bitmask, since 0 is ON
     digitalWrite(r + 2, HIGH);
     delay(1);
     digitalWrite(r + 2, LOW);
   }
-  if (playerRow == cLevel.exitRow && playerCol == cLevel.exitCol) {
-    victoryFlag=true;
+  if (playerRow == levels[cLevel].exitRow && playerCol == levels[cLevel].exitCol) {
+    cLevel++;
+    if (cLevel < (sizeof(levels)/sizeof(levels[0])))
+      setPos(levels[cLevel].startRow, levels[cLevel].startCol);
   }
 
 
