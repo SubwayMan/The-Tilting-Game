@@ -23,3 +23,24 @@ Truth is, I forgot. I made this project ages ago and I suffer from extreme brain
 Me. I did this. So cool.
 
 ### Images
+
+So epic omg. I manage my cables like how I manage my problematic collection of empty chip wrappers.
+
+![0](https://github.com/SubwayMan/The-Tilting-Game/assets/57021762/52d7c1d4-07e5-4811-a3cc-69dc8806db6f)
+
+Here's another view. The yellow LED represents the spot where you last died.
+
+![0](https://github.com/SubwayMan/The-Tilting-Game/assets/57021762/c6432ec2-16ed-45f0-b9e0-a67e50b96bc3)
+
+The two shift registers. Also, cables. I love cables.
+
+![0](https://github.com/SubwayMan/The-Tilting-Game/assets/57021762/9521bc21-0f55-40bd-ab22-5114a9e98dd4)
+
+Dark picture. Such photo. So wow.
+![0](https://github.com/SubwayMan/The-Tilting-Game/assets/57021762/e130294a-5c65-4108-8031-3b3e1effb702)
+
+Spicy tuna and pork chashu onigiri. I could've rotated this picture. I didn't. If you really care that much then submit a PR crying about how much you want me to rotate the onigiri picture.
+
+![0](https://github.com/SubwayMan/The-Tilting-Game/assets/57021762/3f34d85f-6daf-454c-b00b-d71f9ac63381)
+
+
