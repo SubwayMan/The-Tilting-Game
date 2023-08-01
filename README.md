@@ -11,7 +11,7 @@ Features:
 
 ### So, how do you build it?
 
-Truth is, I forgot. I made this project ages ago and I suffer from extreme brain damage (being a moron). I still remember all the components though.
+Truth is, I forgot. I made this project ages ago. Also, I'm pretty stupid. I still remember all the components though.
 - MPU6050 gyroscope (you tilt like in mario kart -> this thing goes brr -> epic)
 - 8x8 LED array. This thing has 24 pins and each LED can be either red or green (or yellow if you turn on both components). I forgot the sensor name but I remember when I went to look up the datasheet I had to deepL it from Russian.
 - 2 shift registers. The arduino don't got enough pins for all this BS.
